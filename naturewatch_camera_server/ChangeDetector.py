@@ -211,10 +211,9 @@ class ChangeDetector(Thread):
             # take one picture every minute
             if self.get_fake_time() - self.lastPhotoTime >= self.timelapse:
                 self.logger.info("ChangeDetector: " + str(self.timelapse) + "s elapsed -> capturing...")
-                # TODO: no magic numbers! (make it configurable)
-                timestamp = self.get_formatted_time()
+                filename = self.get_filename()
                 image = self.camera_controller.get_hires_image()
-                self.file_saver.save_image(image, timestamp)
+                self.file_saver.save_image(image, filename)
                 self.file_saver.save_thumb(imutils.resize(image, width=self.config["md_width"]), timestamp, self.mode)
                 self.lastPhotoTime = self.get_fake_time()
                 self.logger.info("ChangeDetector: photo capture completed")
@@ -231,7 +230,7 @@ class ChangeDetector(Thread):
         timestamp = datetime.utcfromtimestamp(time_float).strftime('%Y-%m-%d-%H-%M-%S')
         return timestamp
     
-    def get_filename(self):
-        timestamp = get_formatted_time = self.get_formatted_time()
+    def get_filename(self) -> str:
+        timestamp = self.get_formatted_time()
         folder = timestamp.strftime
         return "/".join([folder, timestamp + ".jpg"]) 
