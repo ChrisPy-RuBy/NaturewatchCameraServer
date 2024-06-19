@@ -182,10 +182,11 @@ class ChangeDetector(Thread):
             if img is not None:
                 if self.detect_change_contours(img) is True:
                     self.logger.info("ChangeDetector: detected motion. Starting capture...")
-                    timestamp = self.get_formatted_time()
+                    filename = self.get_formatted_time()
+                    filename = self.get_filename()
                     if self.mode == "photo":
                         image = self.camera_controller.get_hires_image()
-                        self.file_saver.save_image(image, timestamp)
+                        self.file_saver.save_image(image, filename)
                         self.file_saver.save_thumb(imutils.resize(image, width=self.config["md_width"]), timestamp, self.mode)
                         self.lastPhotoTime = self.get_fake_time()
                         self.logger.info("ChangeDetector: photo capture completed")
@@ -225,7 +226,12 @@ class ChangeDetector(Thread):
             time_float = time.time()
         return time_float
 
-    def get_formatted_time(self):
+    def get_formatted_time(self) -> datetime:
         time_float = self.get_fake_time()
         timestamp = datetime.utcfromtimestamp(time_float).strftime('%Y-%m-%d-%H-%M-%S')
         return timestamp
+    
+    def get_filename(self):
+        timestamp = get_formatted_time = self.get_formatted_time()
+        folder = timestamp.strftime
+        return "/".join([folder, timestamp + ".jpg"]) 

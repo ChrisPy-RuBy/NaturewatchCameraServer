@@ -59,7 +59,7 @@ class FileSaver(Thread):
             if i == 2:
                 return line.split()[0:6]
 
-    def save_image(self, image, timestamp):
+    def save_image(self, image, filename):
         """
         Save image to disk
         :param image: numpy array image
@@ -67,8 +67,6 @@ class FileSaver(Thread):
         :return: filename
         """
         if self.checkStorage() < 99:
-            filename = timestamp
-            filename = filename + ".jpg"
             self.logger.debug('FileSaver: saving file')
             try:
                 cv2.imwrite(os.path.join(self.config["photos_path"], filename), image)
