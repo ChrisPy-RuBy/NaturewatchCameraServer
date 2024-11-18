@@ -6,6 +6,12 @@ import os
 import datetime
 from subprocess import call
 import zipfile
+try:
+   import paho.mqtt.publish as publish
+except ImportError:
+   import subprocess
+   import sys
+   subprocess.check_call([sys.executable, "-m", "pip", "install", "paho-mqtt==2.1.0"])   
 
 try:
     import picamera
@@ -59,7 +65,7 @@ class FileSaver(Thread):
             if i == 2:
                 return line.split()[0:6]
 
-    def save_image(self, image, filename):
+    def save_image(self, image, timestamp):
         """
         Save image to disk
         :param image: numpy array image
@@ -67,6 +73,8 @@ class FileSaver(Thread):
         :return: filename
         """
         if self.checkStorage() < 99:
+            filename = timestamp
+            filename = filename + ".jpg"
             self.logger.debug('FileSaver: saving file')
             try:
                 cv2.imwrite(os.path.join(self.config["photos_path"], filename), image)
@@ -76,6 +84,8 @@ class FileSaver(Thread):
                 self.logger.error('FileSaver: save_photo() error: ')
                 self.logger.exception(e)
                 pass
+            else:
+                publish.single("homelab/channel1", "ON", hostname="piberrywoodall.local")
         else:
             self.logger.error('FileSaver: not enough space to save image')
             return None

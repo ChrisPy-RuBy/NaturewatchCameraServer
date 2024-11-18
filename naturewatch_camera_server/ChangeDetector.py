@@ -6,6 +6,12 @@ import time
 import imutils
 import logging
 from naturewatch_camera_server.FileSaver import FileSaver
+try:
+   import paho.mqtt.publish as publish
+except ImportError:
+    import sys
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "install", "paho-mqtt==2.1.0"])
 
 
 class ChangeDetector(Thread):
@@ -75,10 +81,11 @@ class ChangeDetector(Thread):
         """
         timestamp = datetime.datetime.now()
         filename = timestamp.strftime('%Y-%m-%d-%H-%M-%S')
-        filename = filename + ".jpg"
+        filename = filename + ".test.jpg"
 
         try:
             cv2.imwrite("photos/" + filename, image)
+            publish.single("homelab/channel1", "ON", hostname="piberrywoodall.local")
         except Exception as e:
             self.logger.error('ChangeDetector: save_photo() error: ')
             self.logger.exception(e)
@@ -181,12 +188,12 @@ class ChangeDetector(Thread):
             # only proceed if there is an image
             if img is not None:
                 if self.detect_change_contours(img) is True:
+                    publish.single("homelab/channel1", "ON", hostname="piberrywoodall.local")
                     self.logger.info("ChangeDetector: detected motion. Starting capture...")
-                    filename = self.get_formatted_time()
-                    filename = self.get_filename()
+                    timestamp = self.get_formatted_time()
                     if self.mode == "photo":
                         image = self.camera_controller.get_hires_image()
-                        self.file_saver.save_image(image, filename)
+                        self.file_saver.save_image(image, timestamp)
                         self.file_saver.save_thumb(imutils.resize(image, width=self.config["md_width"]), timestamp, self.mode)
                         self.lastPhotoTime = self.get_fake_time()
                         self.logger.info("ChangeDetector: photo capture completed")
@@ -211,9 +218,10 @@ class ChangeDetector(Thread):
             # take one picture every minute
             if self.get_fake_time() - self.lastPhotoTime >= self.timelapse:
                 self.logger.info("ChangeDetector: " + str(self.timelapse) + "s elapsed -> capturing...")
-                filename = self.get_filename()
+                # TODO: no magic numbers! (make it configurable)
+                timestamp = self.get_formatted_time()
                 image = self.camera_controller.get_hires_image()
-                self.file_saver.save_image(image, filename)
+                self.file_saver.save_image(image, timestamp)
                 self.file_saver.save_thumb(imutils.resize(image, width=self.config["md_width"]), timestamp, self.mode)
                 self.lastPhotoTime = self.get_fake_time()
                 self.logger.info("ChangeDetector: photo capture completed")
@@ -225,12 +233,7 @@ class ChangeDetector(Thread):
             time_float = time.time()
         return time_float
 
-    def get_formatted_time(self) -> datetime:
+    def get_formatted_time(self):
         time_float = self.get_fake_time()
         timestamp = datetime.utcfromtimestamp(time_float).strftime('%Y-%m-%d-%H-%M-%S')
         return timestamp
-    
-    def get_filename(self) -> str:
-        timestamp = self.get_formatted_time()
-        folder = timestamp.strftime
-        return "/".join([folder, timestamp + ".jpg"]) 
