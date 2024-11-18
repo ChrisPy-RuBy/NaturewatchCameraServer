@@ -6,6 +6,7 @@ import os
 import datetime
 from subprocess import call
 import zipfile
+import paho.mqtt.publish as publish
 
 try:
     import picamera
@@ -58,6 +59,8 @@ class FileSaver(Thread):
             line = df.readline()
             if i == 2:
                 return line.split()[0:6]
+            
+    
 
     def save_image(self, image, filename):
         """
@@ -76,9 +79,14 @@ class FileSaver(Thread):
                 self.logger.error('FileSaver: save_photo() error: ')
                 self.logger.exception(e)
                 pass
+            else:
+                publish.single("homelab/channel1", "ON", hostname="piberrywoodall.local", port=1883)
+
         else:
             self.logger.error('FileSaver: not enough space to save image')
             return None
+        
+    
 
     def save_thumb(self, image, timestamp, media_type):
 

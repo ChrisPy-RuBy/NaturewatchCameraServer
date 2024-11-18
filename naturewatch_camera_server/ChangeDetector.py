@@ -190,6 +190,7 @@ class ChangeDetector(Thread):
                         self.file_saver.save_thumb(imutils.resize(image, width=self.config["md_width"]), timestamp, self.mode)
                         self.lastPhotoTime = self.get_fake_time()
                         self.logger.info("ChangeDetector: photo capture completed")
+                        pub
                     elif self.mode == "video":
                         self.file_saver.save_thumb(img, timestamp, self.mode)
                         self.camera_controller.wait_recording(self.config["video_duration_after_motion"])
