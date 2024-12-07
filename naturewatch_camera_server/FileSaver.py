@@ -6,6 +6,14 @@ import os
 import datetime
 from subprocess import call
 import zipfile
+import time
+try:
+   from gpiozero import LED
+except ImportError:
+   import subprocess
+   import sys
+   subprocess.check_call([sys.executable, "-m", "pip", "install", "gpiozero"])   
+   from gpiozero import LED
 
 try:
     import picamera
@@ -27,10 +35,8 @@ class FileSaver(Thread):
             self.logger = logging
 
         self.config = config
-
-# Scaledown factor for thumbnail images
-
         self.thumbnail_factor = self.config["tn_width"] / self.config["img_width"]
+        self.trigger = LED(4)
 
     def checkStorage(self):
         # Disk information
@@ -59,7 +65,7 @@ class FileSaver(Thread):
             if i == 2:
                 return line.split()[0:6]
 
-    def save_image(self, image, filename):
+    def save_image(self, image, timestamp):
         """
         Save image to disk
         :param image: numpy array image
@@ -67,6 +73,8 @@ class FileSaver(Thread):
         :return: filename
         """
         if self.checkStorage() < 99:
+            filename = timestamp
+            filename = filename + ".jpg"
             self.logger.debug('FileSaver: saving file')
             try:
                 cv2.imwrite(os.path.join(self.config["photos_path"], filename), image)
@@ -76,6 +84,10 @@ class FileSaver(Thread):
                 self.logger.error('FileSaver: save_photo() error: ')
                 self.logger.exception(e)
                 pass
+            else:
+                self.trigger.on()
+                time.sleep(1)
+                self.trigger.off()
         else:
             self.logger.error('FileSaver: not enough space to save image')
             return None
