@@ -7,13 +7,6 @@ import datetime
 from subprocess import call
 import zipfile
 import time
-try:
-   from gpiozero import LED
-except ImportError:
-   import subprocess
-   import sys
-   subprocess.check_call([sys.executable, "-m", "pip", "install", "gpiozero"])   
-   from gpiozero import LED
 
 try:
     import picamera
@@ -22,6 +15,9 @@ try:
 except ImportError:
     picamera = None
     picamera_exists = False
+
+import time
+
 
 
 class FileSaver(Thread):
@@ -36,7 +32,7 @@ class FileSaver(Thread):
 
         self.config = config
         self.thumbnail_factor = self.config["tn_width"] / self.config["img_width"]
-        self.trigger = LED(4)
+        
 
     def checkStorage(self):
         # Disk information
@@ -84,10 +80,6 @@ class FileSaver(Thread):
                 self.logger.error('FileSaver: save_photo() error: ')
                 self.logger.exception(e)
                 pass
-            else:
-                self.trigger.on()
-                time.sleep(1)
-                self.trigger.off()
         else:
             self.logger.error('FileSaver: not enough space to save image')
             return None

@@ -8,7 +8,15 @@ import imutils
 import logging
 from naturewatch_camera_server.FileSaver import FileSaver
 
-import led
+try:
+   from gpiozero import LED
+except ImportError:
+   import subprocess
+   import sys
+   subprocess.check_call([sys.executable, "-m", "pip", "install", "gpiozero"])   
+   from gpiozero import LED
+
+trigger = LED(4)
 
 class ChangeDetector(Thread):
 
@@ -77,18 +85,15 @@ class ChangeDetector(Thread):
         """
         timestamp = datetime.datetime.now()
         filename = timestamp.strftime('%Y-%m-%d-%H-%M-%S')
-        trigger = led
         filename = filename + ".test.jpg"
 
         try:
             cv2.imwrite("photos/" + filename, image)
-            trigger.on() 
-            time.sleep(1)
-            trigger.off()
         except Exception as e:
             self.logger.error('ChangeDetector: save_photo() error: ')
             self.logger.exception(e)
             pass
+    
 
     def detect_change_contours(self, img):
         """
@@ -187,7 +192,6 @@ class ChangeDetector(Thread):
             # only proceed if there is an image
             if img is not None:
                 if self.detect_change_contours(img) is True:
-                    publish.single("homelab/channel1", "ON", hostname="piberrywoodall.local")
                     self.logger.info("ChangeDetector: detected motion. Starting capture...")
                     timestamp = self.get_formatted_time()
                     if self.mode == "photo":
@@ -196,6 +200,10 @@ class ChangeDetector(Thread):
                         self.file_saver.save_thumb(imutils.resize(image, width=self.config["md_width"]), timestamp, self.mode)
                         self.lastPhotoTime = self.get_fake_time()
                         self.logger.info("ChangeDetector: photo capture completed")
+                        trigger.on()
+                        time.sleep(1)
+                        trigger.off()
+                        self.logger.info("Triggering Trap")
                     elif self.mode == "video":
                         self.file_saver.save_thumb(img, timestamp, self.mode)
                         self.camera_controller.wait_recording(self.config["video_duration_after_motion"])
