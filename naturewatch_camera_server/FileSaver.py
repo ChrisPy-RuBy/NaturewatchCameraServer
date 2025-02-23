@@ -6,6 +6,7 @@ import os
 import datetime
 from subprocess import call
 import zipfile
+import time
 
 try:
     import picamera
@@ -14,6 +15,9 @@ try:
 except ImportError:
     picamera = None
     picamera_exists = False
+
+import time
+
 
 
 class FileSaver(Thread):
@@ -27,10 +31,8 @@ class FileSaver(Thread):
             self.logger = logging
 
         self.config = config
-
-# Scaledown factor for thumbnail images
-
         self.thumbnail_factor = self.config["tn_width"] / self.config["img_width"]
+        
 
     def checkStorage(self):
         # Disk information
@@ -59,7 +61,7 @@ class FileSaver(Thread):
             if i == 2:
                 return line.split()[0:6]
 
-    def save_image(self, image, filename):
+    def save_image(self, image, timestamp):
         """
         Save image to disk
         :param image: numpy array image
@@ -67,6 +69,8 @@ class FileSaver(Thread):
         :return: filename
         """
         if self.checkStorage() < 99:
+            filename = timestamp
+            filename = filename + ".jpg"
             self.logger.debug('FileSaver: saving file')
             try:
                 cv2.imwrite(os.path.join(self.config["photos_path"], filename), image)

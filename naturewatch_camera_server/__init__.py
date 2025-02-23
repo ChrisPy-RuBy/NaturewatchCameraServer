@@ -13,6 +13,16 @@ from naturewatch_camera_server.api import api
 from naturewatch_camera_server.data import data
 from naturewatch_camera_server.static_page import static_page
 
+try:
+    from gpiozero import LED 
+except ImportError:
+    import sys
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "gpiozero"])
+    from gpiozero import LED
+
+led = LED(4)
+
 
 def create_app():
     """
